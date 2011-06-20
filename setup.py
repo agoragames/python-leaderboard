@@ -13,7 +13,7 @@ setup(
     author_email="ola@agoragames.com",
     url='https://github.com/agoragames/python-leaderboard',
     license='LICENSE.txt',
-    description="",
+    description="Library for interacting with leaderboards backed by Redis",
     long_description=open('README.rst').read(),
     keywords=['python', 'leaderboard', 'redis'],
     install_requires=requirements,

@@ -19,6 +19,7 @@ Leaderboards backed by Redis in Python, http://redis.io.
 
 Builds off ideas proposed in http://blog.agoragames.com/2011/01/01/creating-high-score-tables-leaderboards-using-redis/.
 
+see https://github.com/agoragames/leaderboard/ for detailed usage information
 
 .. _license:
 
