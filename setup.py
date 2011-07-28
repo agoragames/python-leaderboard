@@ -5,12 +5,12 @@ except ImportError:
 
 requirements = [r for r in map(str.strip, open('requirements.txt').readlines())]
 
-
+from leaderboard import Leaderboard
 setup(
     name='leaderboard',
-    version='0.0.1',
-    author='Ola Mork',
-    author_email="ola@agoragames.com",
+    version=Leaderboard.VERSION,
+    author='Ola Mork, Aaron Westendorf',
+    author_email="ola@agoragames.com, aaron@agoragames.com",
     url='https://github.com/agoragames/python-leaderboard',
     license='LICENSE.txt',
     packages=["leaderboard"],

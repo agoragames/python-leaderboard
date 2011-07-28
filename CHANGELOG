@@ -1,0 +1,12 @@
+1.1.1
+=====
+
+Uses connection pooling for each unique (host,port,db) connection
+
+Renamed `add_member` to `rank_member` to clarify that it applies to both 
+new and existing members
+
+Added `clear` to delete a leaderboard and its members
+
+Page size can be dynamically set in `total_pages`, `leaders`, and `around_me`
+as the `page_size` keyword argument

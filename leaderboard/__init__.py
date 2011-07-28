@@ -1,40 +1,74 @@
-from redis import Redis
+from redis import Redis, ConnectionPool
 from copy import deepcopy
 from math import ceil
 
 class Leaderboard(object):
-	VERSION = '1.0.1'
+	VERSION = '1.1.1'
 	DEFAULT_PAGE_SIZE = 25
 	DEFAULT_REDIS_HOST = 'localhost'
 	DEFAULT_REDIS_PORT = 6379
+	DEFAULT_REDIS_DB = 0
 
-	def __init__(self, leaderboard_name, host = DEFAULT_REDIS_HOST, port = DEFAULT_REDIS_PORT, page_size = DEFAULT_PAGE_SIZE, **redis_options):
+	@classmethod
+	def pool(self, host, port, db, pools={}):
+		'''
+		Fetch a redis conenction pool for the unique combination of host
+		and port. Will create a new one if there isn't one already.
+		'''
+		key = (host,port,db)
+		rval = pools.get( key )
+		if not isinstance(rval,ConnectionPool):
+			rval = ConnectionPool(host=host, port=port, db=db)
+			pools[ key ] = rval
+		return rval
+
+	def __init__(self, leaderboard_name, **options):
+		'''
+		Initialize a connection to a specific leaderboard. By default, will use a
+		redis connection pool for any unique host:port:db pairing.
+
+		The options and their default values (if any) are:
+
+		host : the host to connect to if creating a new handle ('localhost')
+		port : the port to connect to if creating a new handle (6379)
+		db : the redis database to connect to if creating a new handle (0)
+		page_size : the default number of items to return in each page (25)
+		connection : an existing redis handle if re-using for this leaderboard
+		connection_pool : redis connection pool to use if creating a new handle
+		'''
 		self.leaderboard_name = leaderboard_name
-		self.host = host
-		self.port = port
+		self.options = deepcopy(options)
 
-		if page_size < 1:
-			page_size = self.DEFAULT_PAGE_SIZE
+		self.page_size = self.options.pop('page_size', self.DEFAULT_PAGE_SIZE)
+		if self.page_size < 1:
+			self.page_size = self.DEFAULT_PAGE_SIZE
 
-		self.page_size = page_size
+		self.redis_connection = self.options.pop('connection',None)
+		if not isinstance(self.redis_connection,Redis):
+			if 'connection_pool' not in self.options:
+				self.options['connection_pool'] = self.pool( 
+					self.options.pop('host', self.DEFAULT_REDIS_HOST),
+					self.options.pop('port', self.DEFAULT_REDIS_PORT),
+					self.options.pop('db', self.DEFAULT_REDIS_DB)
+				)
+			self.redis_connection = Redis(**self.options)
 
-		self.redis_options = deepcopy(redis_options)
-		self.redis_options.setdefault('host', self.host)
-		self.redis_options.setdefault('port', self.port)
-
-		self.redis_connection = Redis(self.redis_options['host'], self.redis_options['port'], self.redis_options.get('db',0))
-
-	def add_member(self, member, score):
-		return self.redis_connection.zadd(self.leaderboard_name, member, score)
+	def rank_member(self, member, score):
+		# redis-py deprecated the non-kwarg form of zadd 
+		return self.redis_connection.zadd(self.leaderboard_name, **{member:score})
 
 	def remove_member(self, member):
 		return self.redis_connection.zrem(self.leaderboard_name, member)
 
+	def clear(self):
+		'''Remove all rankings for this leaderboard.'''
+		self.redis_connection.delete(self.leaderboard_name)
+
 	def total_members(self):
 		return self.redis_connection.zcard(self.leaderboard_name)
 
-	def total_pages(self):
-		return ceil(float(self.total_members()) / self.page_size)
+	def total_pages(self, **options):
+		return ceil(float(self.total_members()) / options.get('page_size',self.page_size))
 
 	def total_members_in_score_range(self, min_score, max_score):
 		return self.redis_connection.zcount(self.leaderboard_name, min_score, max_score)
@@ -61,22 +95,23 @@ class Leaderboard(object):
 	def remove_members_in_score_range(self, min_score, max_score):
 		return self.redis_connection.zremrangebyscore(self.leaderboard_name, min_score, max_score)
 
-	def leaders(self, current_page, with_scores = True, with_rank = True, use_zero_index_for_rank = False):
+	def leaders(self, current_page, with_scores = True, with_rank = True, use_zero_index_for_rank = False, **options):
 		if current_page < 1:
 			current_page = 1
-			
-		tpages = self.total_pages()
+		
+		page_size = options.get('page_size',self.page_size)
+		tpages = self.total_pages(page_size=page_size)
 			
 		if current_page > tpages:
 			current_page = tpages
 
 		index_for_redis = current_page - 1
 
-		starting_offset = (index_for_redis * self.page_size)
+		starting_offset = (index_for_redis * page_size)
 		if starting_offset < 0:
 			starting_offset = 0
 
-		ending_offset = (starting_offset + self.page_size) - 1
+		ending_offset = (starting_offset + page_size) - 1
 
 		raw_leader_data = self.redis_connection.zrevrange(self.leaderboard_name, int(starting_offset), int(ending_offset), with_scores)
 		if raw_leader_data:
@@ -84,14 +119,15 @@ class Leaderboard(object):
 		else:
 			return None
 
-	def around_me(self, member, with_scores = True, with_rank = True, use_zero_index_for_rank = False):
+	def around_me(self, member, with_scores = True, with_rank = True, use_zero_index_for_rank = False, **options):
 		reverse_rank_for_member = self.redis_connection.zrevrank(self.leaderboard_name, member)
 
-		starting_offset = reverse_rank_for_member - (self.page_size / 2)
+		page_size = options.get('page_size',self.page_size)
+		starting_offset = reverse_rank_for_member - (page_size / 2)
 		if starting_offset < 0:
 			starting_offset = 0
 
-		ending_offset = (starting_offset + self.page_size) - 1
+		ending_offset = (starting_offset + page_size) - 1
 
 		raw_leader_data = self.redis_connection.zrevrange(self.leaderboard_name, starting_offset, ending_offset, with_scores)
 		if raw_leader_data:

@@ -1,3 +1,4 @@
+from redis import Redis, ConnectionPool
 import leaderboard
 import unittest
 
@@ -9,21 +10,48 @@ class LeaderboardTestCase(unittest.TestCase):
 		self.leaderboard.redis_connection.flushdb()
 	
 	def test_version(self):
-		self.assertEquals('1.0.1', self.leaderboard.VERSION)
+		self.assertEquals('1.1.1', self.leaderboard.VERSION)
 	
-	def test_initialize_with_defaults(self):
+	def test_init_with_defaults(self):
 		self.assertEquals('name', self.leaderboard.leaderboard_name)
-		self.assertEquals('localhost', self.leaderboard.host)
-		self.assertEquals(6379, self.leaderboard.port)
+		self.assertEquals( 1, len(self.leaderboard.options) )
+		self.assertTrue( isinstance(self.leaderboard.options['connection_pool'],ConnectionPool) )
+		self.assertTrue( isinstance(self.leaderboard.redis_connection,Redis) )
 		self.assertEquals(self.leaderboard.DEFAULT_PAGE_SIZE, self.leaderboard.page_size)
 	
-	def test_page_size_is_default_page_size_if_set_to_invalid_value(self):
-		self.leaderboard = leaderboard.Leaderboard('name', 'localhost', 6379, 0)
+	def test_init_sets_page_size_to_default_if_set_to_invalid_value(self):
+		self.leaderboard = leaderboard.Leaderboard('name', page_size=0)
 		self.assertEquals(self.leaderboard.DEFAULT_PAGE_SIZE, self.leaderboard.page_size)
+
+	def test_init_uses_connection_pooling(self):
+		lb0 = leaderboard.Leaderboard('lb0', db=0)
+		lb1 = leaderboard.Leaderboard('lb1', db=0)
+		lb2 = leaderboard.Leaderboard('lb2', db=1)
+
+		self.assertEquals( lb0.redis_connection.connection_pool, 
+			lb1.redis_connection.connection_pool )
+		self.assertNotEquals( lb0.redis_connection.connection_pool, 
+			lb2.redis_connection.connection_pool )
 	
-	def test_add_member_and_total_members(self):
-		self.leaderboard.add_member('member', 1)
+	def test_rank_member_and_total_members(self):
+		self.leaderboard.rank_member('member', 1)
 		self.assertEquals(1, self.leaderboard.total_members())
+
+	def test_remove_member(self):
+		self._add_members_to_leaderboard(self.leaderboard.DEFAULT_PAGE_SIZE)
+		
+		self.assertEquals(self.leaderboard.DEFAULT_PAGE_SIZE, self.leaderboard.total_members())		
+		
+		self.leaderboard.remove_member('member_1')
+		self.assertEquals(self.leaderboard.DEFAULT_PAGE_SIZE - 1, self.leaderboard.total_members())
+		self.assertEquals(None, self.leaderboard.rank_for('member_1'))
+
+	def test_clear(self):
+		self._add_members_to_leaderboard(3)
+		self.assertEquals(3, self.leaderboard.total_members() )
+		self.leaderboard.clear()
+		self.assertFalse( self.leaderboard.redis_connection.exists(
+			self.leaderboard.leaderboard_name) )
 	
 	def test_total_members_in_score_range(self):
 		self._add_members_to_leaderboard(5)
@@ -110,17 +138,8 @@ class LeaderboardTestCase(unittest.TestCase):
 		self.assertEquals(16, ranked_members[2]['rank'])
 		self.assertEquals(10, ranked_members[2]['score'])
 	
-	def test_remove_member(self):
-		self._add_members_to_leaderboard(self.leaderboard.DEFAULT_PAGE_SIZE)
-		
-		self.assertEquals(self.leaderboard.DEFAULT_PAGE_SIZE, self.leaderboard.total_members())		
-		
-		self.leaderboard.remove_member('member_1')
-		self.assertEquals(self.leaderboard.DEFAULT_PAGE_SIZE - 1, self.leaderboard.total_members())
-		self.assertEquals(None, self.leaderboard.rank_for('member_1'))
-	
 	def test_change_score_for(self):
-		self.leaderboard.add_member('member_1', 5)		
+		self.leaderboard.rank_member('member_1', 5)		
 		self.assertEquals(5, self.leaderboard.score_for('member_1'))
 	
 		self.leaderboard.change_score_for('member_1', 5)
@@ -130,7 +149,7 @@ class LeaderboardTestCase(unittest.TestCase):
 		self.assertEquals(5, self.leaderboard.score_for('member_1'))
 	
 	def test_check_member(self):
-		self.leaderboard.add_member('member_1', 10)
+		self.leaderboard.rank_member('member_1', 10)
 		
 		self.assertEquals(True, self.leaderboard.check_member('member_1'))
 		self.assertEquals(False, self.leaderboard.check_member('member_2'))
@@ -156,9 +175,9 @@ class LeaderboardTestCase(unittest.TestCase):
 		
 		self.assertEquals(5, self.leaderboard.total_members())
 		
-		self.leaderboard.add_member('cheater_1', 100)
-		self.leaderboard.add_member('cheater_2', 101)
-		self.leaderboard.add_member('cheater_3', 102)
+		self.leaderboard.rank_member('cheater_1', 100)
+		self.leaderboard.rank_member('cheater_2', 101)
+		self.leaderboard.rank_member('cheater_3', 102)
 	
 		self.assertEquals(8, self.leaderboard.total_members())
 	
@@ -171,4 +190,4 @@ class LeaderboardTestCase(unittest.TestCase):
 	
 	def _add_members_to_leaderboard(self, members_to_add = 5):
 		for index in range(1, members_to_add + 1):
-			self.leaderboard.add_member("member_%d" % index, index)
+			self.leaderboard.rank_member("member_%d" % index, index)
