@@ -3,7 +3,7 @@ from copy import deepcopy
 from math import ceil
 
 class Leaderboard(object):
-	VERSION = '1.1.1'
+	VERSION = '1.1.2'
 	DEFAULT_PAGE_SIZE = 25
 	DEFAULT_REDIS_HOST = 'localhost'
 	DEFAULT_REDIS_PORT = 6379
@@ -55,10 +55,10 @@ class Leaderboard(object):
 
 	def rank_member(self, member, score):
 		# redis-py deprecated the non-kwarg form of zadd 
-		return self.redis_connection.zadd(self.leaderboard_name, **{member:score})
+		return self.redis_connection.zadd(self.leaderboard_name, **{str(member):score})
 
 	def remove_member(self, member):
-		return self.redis_connection.zrem(self.leaderboard_name, member)
+		return self.redis_connection.zrem(self.leaderboard_name, str(member))
 
 	def clear(self):
 		'''Remove all rankings for this leaderboard.'''
@@ -74,23 +74,26 @@ class Leaderboard(object):
 		return self.redis_connection.zcount(self.leaderboard_name, min_score, max_score)
 
 	def change_score_for(self, member, delta):
-		return self.redis_connection.zincrby(self.leaderboard_name, member, delta)
+		return self.redis_connection.zincrby(self.leaderboard_name, str(member), delta)
 
 	def rank_for(self, member, use_zero_index_for_rank = False):
-		if use_zero_index_for_rank:
-			return self.redis_connection.zrevrank(self.leaderboard_name, member)
-		else:
-			try: return self.redis_connection.zrevrank(self.leaderboard_name, member) + 1
-			except: return None
+		try:
+			return self.redis_connection.zrevrank(self.leaderboard_name, str(member))\
+				+ (0 if use_zero_index_for_rank else 1)
+		except: return None
 
 	def score_for(self, member):
-		return self.redis_connection.zscore(self.leaderboard_name, member)
+		return self.redis_connection.zscore(self.leaderboard_name, str(member))
 
 	def check_member(self, member):
-		return not None == self.redis_connection.zscore(self.leaderboard_name, member)
+		return not None == self.redis_connection.zscore(self.leaderboard_name, str(member))
 
 	def score_and_rank_for(self, member, use_zero_index_for_rank = False):
-		return {'member' : member, 'score' : self.score_for(member), 'rank' : self.rank_for(member, use_zero_index_for_rank)}
+		return {
+			'member' : member, 
+			'score' : self.score_for(member), 
+			'rank' : self.rank_for(member, use_zero_index_for_rank)
+		}
 
 	def remove_members_in_score_range(self, min_score, max_score):
 		return self.redis_connection.zremrangebyscore(self.leaderboard_name, min_score, max_score)
@@ -120,7 +123,8 @@ class Leaderboard(object):
 			return None
 
 	def around_me(self, member, with_scores = True, with_rank = True, use_zero_index_for_rank = False, **options):
-		reverse_rank_for_member = self.redis_connection.zrevrank(self.leaderboard_name, member)
+		reverse_rank_for_member = \
+			self.redis_connection.zrevrank(self.leaderboard_name, str(member))
 
 		page_size = options.get('page_size',self.page_size)
 		starting_offset = reverse_rank_for_member - (page_size / 2)
