@@ -3,7 +3,7 @@ from copy import deepcopy
 from math import ceil
 
 class Leaderboard(object):
-	VERSION = '1.1.2'
+	VERSION = '1.1.3'
 	DEFAULT_PAGE_SIZE = 25
 	DEFAULT_REDIS_HOST = 'localhost'
 	DEFAULT_REDIS_PORT = 6379
@@ -105,9 +105,6 @@ class Leaderboard(object):
 		page_size = options.get('page_size',self.page_size)
 		tpages = self.total_pages(page_size=page_size)
 			
-		if current_page > tpages:
-			current_page = tpages
-
 		index_for_redis = current_page - 1
 
 		starting_offset = (index_for_redis * page_size)

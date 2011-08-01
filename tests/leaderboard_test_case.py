@@ -10,7 +10,7 @@ class LeaderboardTestCase(unittest.TestCase):
 		self.leaderboard.redis_connection.flushdb()
 	
 	def test_version(self):
-		self.assertEquals('1.1.2', self.leaderboard.VERSION)
+		self.assertEquals('1.1.3', self.leaderboard.VERSION)
 	
 	def test_init_with_defaults(self):
 		self.assertEquals('name', self.leaderboard.leaderboard_name)
@@ -103,9 +103,10 @@ class LeaderboardTestCase(unittest.TestCase):
 		
 		leaders = self.leaderboard.leaders(-5)
 		self.assertEquals(self.leaderboard.page_size, len(leaders))
-		
+	
+    # assert we get an empty page back	
 		leaders = self.leaderboard.leaders(10)
-		self.assertEquals(1, len(leaders))
+		self.assertEquals(None, leaders)
 	
 	def test_around_me(self):
 		self._add_members_to_leaderboard(self.leaderboard.DEFAULT_PAGE_SIZE * 3 + 1)

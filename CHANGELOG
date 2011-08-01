@@ -1,3 +1,14 @@
+1.1.3
+=====
+
+`leaders` will return an empty page if the page number is invalid
+
+1.1.2
+=====
+
+Member identifiers are cast to strings where appropriate
+
+
 1.1.1
 =====
 
