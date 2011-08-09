@@ -1,2 +1,2 @@
-redis
+redis>=2.4.9
 hiredis

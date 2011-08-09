@@ -1,3 +1,9 @@
+master
+======
+
+Changing redis requirements to ensure that ConnectionPool accepts a host
+keyword argument
+
 1.1.3
 =====
 
