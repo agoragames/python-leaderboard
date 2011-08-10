@@ -3,7 +3,7 @@ from copy import deepcopy
 from math import ceil
 
 class Leaderboard(object):
-	VERSION = '1.1.3'
+	VERSION = '1.1.4'
 	DEFAULT_PAGE_SIZE = 25
 	DEFAULT_REDIS_HOST = 'localhost'
 	DEFAULT_REDIS_PORT = 6379
