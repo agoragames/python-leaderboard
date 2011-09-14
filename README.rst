@@ -23,13 +23,13 @@ see https://github.com/agoragames/leaderboard/ for detailed usage information
 
 For other platforms see:
 
- + Ruby - https://github.com/agoragames/leaderboard
- + Python - https://github.com/agoragames/python-leaderboard
- + Java - https://github.com/agoragames/java-leaderboard
- + Scala - https://github.com/agoragames/scala-leaderboard
- + PHP - https://github.com/agoragames/php-leaderboard
- + Erlang - https://github.com/agoragames/erlang-leaderboard
- + NodeJS - https://github.com/omork/node-leaderboard
++ Ruby - https://github.com/agoragames/leaderboard
++ Python - https://github.com/agoragames/python-leaderboard
++ Java - https://github.com/agoragames/java-leaderboard
++ Scala - https://github.com/agoragames/scala-leaderboard
++ PHP - https://github.com/agoragames/php-leaderboard
++ Erlang - https://github.com/agoragames/erlang-leaderboard
++ NodeJS - https://github.com/omork/node-leaderboard
 
 
 .. _license:
