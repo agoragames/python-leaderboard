@@ -2,7 +2,7 @@
 Leaderboard: redis backed leaderboard library
 =================================
 
-:Version: 1.1.4
+:Version: 1.1.5
 :Download: http://pypi.python.org/pypi/leaderboard
 :Source: https://github.com/agoragames/python-leaderboard
 :Keywords: python, redis, leaderboard
