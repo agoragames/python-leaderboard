@@ -130,7 +130,7 @@ class Leaderboard(object):
         reverse_rank_for_member = \
             self._rank_method(self.leaderboard_name, str(member))
 
-        if reverse_rank_for_member:
+        if not reverse_rank_for_member is None:
             page_size = options.get('page_size',self.page_size)
             starting_offset = reverse_rank_for_member - (page_size / 2)
             if starting_offset < 0:
