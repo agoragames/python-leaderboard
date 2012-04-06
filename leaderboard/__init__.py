@@ -2,12 +2,15 @@ from redis import Redis, ConnectionPool
 from copy import deepcopy
 from math import ceil
 
+
 class Leaderboard(object):
-	VERSION = '1.1.4'
+	VERSION = '1.1.5'
 	DEFAULT_PAGE_SIZE = 25
 	DEFAULT_REDIS_HOST = 'localhost'
 	DEFAULT_REDIS_PORT = 6379
 	DEFAULT_REDIS_DB = 0
+	ASC = 'asc'
+	DESC = 'desc'
 
 	@classmethod
 	def pool(self, host, port, db, pools={}):
@@ -43,10 +46,14 @@ class Leaderboard(object):
 		if self.page_size < 1:
 			self.page_size = self.DEFAULT_PAGE_SIZE
 
+		self.order = self.options.pop('order', self.DESC).lower()
+		if not self.order in [self.ASC, self.DESC]:
+			raise ValueError("%s is not one of [%s]" % (self.order,  ",".join([self.ASC, self.DESC])))
+
 		self.redis_connection = self.options.pop('connection',None)
 		if not isinstance(self.redis_connection,Redis):
 			if 'connection_pool' not in self.options:
-				self.options['connection_pool'] = self.pool( 
+				self.options['connection_pool'] = self.pool(
 					self.options.pop('host', self.DEFAULT_REDIS_HOST),
 					self.options.pop('port', self.DEFAULT_REDIS_PORT),
 					self.options.pop('db', self.DEFAULT_REDIS_DB)
@@ -54,7 +61,7 @@ class Leaderboard(object):
 			self.redis_connection = Redis(**self.options)
 
 	def rank_member(self, member, score):
-		# redis-py deprecated the non-kwarg form of zadd 
+		# redis-py deprecated the non-kwarg form of zadd
 		return self.redis_connection.zadd(self.leaderboard_name, **{str(member):score})
 
 	def remove_member(self, member):
@@ -78,7 +85,7 @@ class Leaderboard(object):
 
 	def rank_for(self, member, use_zero_index_for_rank = False):
 		try:
-			return self.redis_connection.zrevrank(self.leaderboard_name, str(member))\
+			return self._rank_method(self.leaderboard_name, str(member))\
 				+ (0 if use_zero_index_for_rank else 1)
 		except: return None
 
@@ -90,8 +97,8 @@ class Leaderboard(object):
 
 	def score_and_rank_for(self, member, use_zero_index_for_rank = False):
 		return {
-			'member' : member, 
-			'score' : self.score_for(member), 
+			'member' : member,
+			'score' : self.score_for(member),
 			'rank' : self.rank_for(member, use_zero_index_for_rank)
 		}
 
@@ -101,10 +108,10 @@ class Leaderboard(object):
 	def leaders(self, current_page, with_scores = True, with_rank = True, use_zero_index_for_rank = False, **options):
 		if current_page < 1:
 			current_page = 1
-		
+
 		page_size = options.get('page_size',self.page_size)
 		tpages = self.total_pages(page_size=page_size)
-			
+
 		index_for_redis = current_page - 1
 
 		starting_offset = (index_for_redis * page_size)
@@ -113,7 +120,7 @@ class Leaderboard(object):
 
 		ending_offset = (starting_offset + page_size) - 1
 
-		raw_leader_data = self.redis_connection.zrevrange(self.leaderboard_name, int(starting_offset), int(ending_offset), with_scores)
+		raw_leader_data = self._range_method(self.leaderboard_name, int(starting_offset), int(ending_offset), with_scores)
 		if raw_leader_data:
 			return self._massage_leader_data(raw_leader_data, with_rank, use_zero_index_for_rank)
 		else:
@@ -121,20 +128,21 @@ class Leaderboard(object):
 
 	def around_me(self, member, with_scores = True, with_rank = True, use_zero_index_for_rank = False, **options):
 		reverse_rank_for_member = \
-			self.redis_connection.zrevrank(self.leaderboard_name, str(member))
+			self._rank_method(self.leaderboard_name, str(member))
 
-		page_size = options.get('page_size',self.page_size)
-		starting_offset = reverse_rank_for_member - (page_size / 2)
-		if starting_offset < 0:
-			starting_offset = 0
+		if reverse_rank_for_member:
+			page_size = options.get('page_size',self.page_size)
+			starting_offset = reverse_rank_for_member - (page_size / 2)
+			if starting_offset < 0:
+				starting_offset = 0
 
-		ending_offset = (starting_offset + page_size) - 1
+			ending_offset = (starting_offset + page_size) - 1
 
-		raw_leader_data = self.redis_connection.zrevrange(self.leaderboard_name, starting_offset, ending_offset, with_scores)
-		if raw_leader_data:
-			return self._massage_leader_data(raw_leader_data, with_rank, use_zero_index_for_rank)
-		else:
-			return None
+			raw_leader_data = self._range_method(self.leaderboard_name, starting_offset, ending_offset, with_scores)
+			if raw_leader_data:
+				return self._massage_leader_data(raw_leader_data, with_rank, use_zero_index_for_rank)
+
+		return None
 
 	def ranked_in_list(self, members, with_scores = True, use_zero_index_for_rank = False):
 		ranks_for_members = []
@@ -149,6 +157,18 @@ class Leaderboard(object):
 			ranks_for_members.append(data)
 
 		return ranks_for_members
+
+	def _range_method(self, *args, **kwargs):
+		if self.order == self.DESC:
+			return self.redis_connection.zrevrange(*args, **kwargs)
+		else:
+			return self.redis_connection.zrange(*args, **kwargs)
+
+	def _rank_method(self, *args, **kwargs):
+		if self.order == self.DESC:
+			return self.redis_connection.zrevrank(*args, **kwargs)
+		else:
+			return self.redis_connection.zrank(*args, **kwargs)
 
 	def _massage_leader_data(self, leaders, with_rank, use_zero_index_for_rank):
 		member_attribute = True
