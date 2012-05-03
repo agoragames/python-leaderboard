@@ -9,9 +9,6 @@ class LeaderboardTestCase(unittest.TestCase):
     def tearDown(self):
         self.leaderboard.redis_connection.flushdb()
 
-    def test_version(self):
-        self.assertEquals('1.1.5', self.leaderboard.VERSION)
-
     def test_init_with_defaults(self):
         self.assertEquals('name', self.leaderboard.leaderboard_name)
         self.assertEquals( 1, len(self.leaderboard.options) )
