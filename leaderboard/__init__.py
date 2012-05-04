@@ -76,7 +76,7 @@ class Leaderboard(object):
         return self.redis_connection
 
     def pipeline(self):
-        return self.reddis_connection.pipeline()
+        return self.redis_connection.pipeline()
 
     def commit(self, pipeline):
         pipeline.execute()
