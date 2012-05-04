@@ -8,8 +8,8 @@ requirements = [r for r in map(str.strip, open('requirements.txt').readlines())]
 setup(
     name='leaderboard',
     version='1.1.6',
-    author='Ola Mork, Aaron Westendorf, Vitaly Babiy',
-    author_email="ola@agoragames.com, aaron@agoragames.com, vbabiy@agoragames.com",
+    author='Ola Mork, Aaron Westendorf, Vitaly Babiy, Brad LaFountain',
+    author_email="ola@agoragames.com, aaron@agoragames.com, vbabiy@agoragames.com, blafountain@majorleaguegaming.com",
     url='https://github.com/agoragames/python-leaderboard',
     license='LICENSE.txt',
     packages=["leaderboard"],
