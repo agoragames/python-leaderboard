@@ -186,6 +186,16 @@ class LeaderboardTestCase(unittest.TestCase):
         for leader in self.leaderboard.leaders(1):
             self.assertTrue(leader['score'] < 100)
 
-    def _add_members_to_leaderboard(self, members_to_add = 5):
+    def test_pipeline(self):
+        pipeline = self.leaderboard.pipeline()
+
+        self._add_members_to_leaderboard(3, pipeline)
+
+        self.assertEquals(0, self.leaderboard.total_members())
+        self.leaderboard.commit(pipeline)
+        self.assertEquals(3, self.leaderboard.total_members())
+
+    def _add_members_to_leaderboard(self, members_to_add = 5, pipeline = None):
         for index in range(1, members_to_add + 1):
-            self.leaderboard.rank_member("member_%d" % index, index)
+            self.leaderboard.rank_member("member_%d" % index, index, pipeline = pipeline)
+
