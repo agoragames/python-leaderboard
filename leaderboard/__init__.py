@@ -141,7 +141,7 @@ class Leaderboard(object):
 
         ending_offset = (starting_offset + page_size) - 1
 
-        raw_leader_data = self._range_method(self._get(**options), self.leaderboard_name, int(starting_offset), int(ending_offset), with_scores)
+        raw_leader_data = self._range_method(self._get(**options), self.leaderboard_name, int(starting_offset), int(ending_offset), withscores=with_scores)
         if raw_leader_data:
             return self._massage_leader_data(raw_leader_data, with_rank, use_zero_index_for_rank)
         else:
@@ -159,7 +159,7 @@ class Leaderboard(object):
 
             ending_offset = (starting_offset + page_size) - 1
 
-            raw_leader_data = self._range_method(self._get(**options), self.leaderboard_name, starting_offset, ending_offset, with_scores)
+            raw_leader_data = self._range_method(self._get(**options), self.leaderboard_name, starting_offset, ending_offset, withscores=with_scores)
             if raw_leader_data:
                 return self._massage_leader_data(raw_leader_data, with_rank, use_zero_index_for_rank)
 
