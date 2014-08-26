@@ -1,5 +1,12 @@
+
 master
 ======
+
+1.1.7
+=====
+
+Fixes #2, https://github.com/agoragames/python-leaderboard/pull/2. Fixed a
+bug where withscores was passed incorrectly on ascending calls.
 
 Changing redis requirements to ensure that ConnectionPool accepts a host
 keyword argument
@@ -20,7 +27,7 @@ Member identifiers are cast to strings where appropriate
 
 Uses connection pooling for each unique (host,port,db) connection
 
-Renamed `add_member` to `rank_member` to clarify that it applies to both 
+Renamed `add_member` to `rank_member` to clarify that it applies to both
 new and existing members
 
 Added `clear` to delete a leaderboard and its members

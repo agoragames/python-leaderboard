@@ -4,7 +4,7 @@ from math import ceil
 
 
 class Leaderboard(object):
-    VERSION = '1.1.6'
+    VERSION = '1.1.7'
     DEFAULT_PAGE_SIZE = 25
     DEFAULT_REDIS_HOST = 'localhost'
     DEFAULT_REDIS_PORT = 6379
