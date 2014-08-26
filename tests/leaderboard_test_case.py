@@ -82,6 +82,17 @@ class LeaderboardTestCase(unittest.TestCase):
         self.assertEquals('member_1', leaders[-1]['member'])
         self.assertEquals(1, leaders[-1]['score'])
 
+    def test_leaders_ascending(self):
+        lb = leaderboard.Leaderboard('asc',order='asc')
+
+        for index in range(1, 11):
+            lb.rank_member("member_%d" % index, index)
+
+        leaders = lb.leaders(1)
+        self.assertEquals(10, len(leaders))
+        self.assertEquals('member_1', leaders[0]['member'])
+        self.assertEquals('member_10', leaders[-1]['member'])
+
     def test_leaders_with_multiple_pages(self):
         self._add_members_to_leaderboard(self.leaderboard.DEFAULT_PAGE_SIZE * 3 + 1)
         self.assertEquals(self.leaderboard.DEFAULT_PAGE_SIZE * 3 + 1, self.leaderboard.total_members())
