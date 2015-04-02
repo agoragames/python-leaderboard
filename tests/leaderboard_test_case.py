@@ -210,3 +210,7 @@ class LeaderboardTestCase(unittest.TestCase):
         for index in range(1, members_to_add + 1):
             self.leaderboard.rank_member("member_%d" % index, index, pipeline = pipeline)
 
+
+    def test_redis_connection(self):
+      lb = leaderboard.Leaderboard('name', connection=Redis())
+      self.assertEquals( 0, len(lb.options) )
