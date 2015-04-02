@@ -2,6 +2,10 @@
 master
 ======
 
+1.1.8 (2015-04-02)
+==================
+Fix Redis connection passing in options, [#3](https://github.com/agoragames/python-leaderboard/pull/3)
+
 1.1.7
 =====
 
