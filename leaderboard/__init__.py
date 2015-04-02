@@ -4,7 +4,7 @@ from math import ceil
 
 
 class Leaderboard(object):
-    VERSION = '1.1.7'
+    VERSION = '1.1.8'
     DEFAULT_PAGE_SIZE = 25
     DEFAULT_REDIS_HOST = 'localhost'
     DEFAULT_REDIS_PORT = 6379
@@ -40,6 +40,7 @@ class Leaderboard(object):
         connection_pool : redis connection pool to use if creating a new handle
         '''
         self.leaderboard_name = leaderboard_name
+        self.redis_connection = options.pop('connection', None)
         self.options = deepcopy(options)
 
         self.page_size = self.options.pop('page_size', self.DEFAULT_PAGE_SIZE)
@@ -50,8 +51,7 @@ class Leaderboard(object):
         if not self.order in [self.ASC, self.DESC]:
             raise ValueError("%s is not one of [%s]" % (self.order,  ",".join([self.ASC, self.DESC])))
 
-        self.redis_connection = self.options.pop('connection',None)
-        if not isinstance(self.redis_connection,Redis):
+        if not isinstance(self.redis_connection, Redis):
             if 'connection_pool' not in self.options:
                 self.options['connection_pool'] = self.pool(
                     self.options.pop('host', self.DEFAULT_REDIS_HOST),
